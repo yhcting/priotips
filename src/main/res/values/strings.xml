@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">PrioTips</string>
+    <string name="welcome">Welcome!</string>
+    <string name="empty">Empty!</string>
+    <string name="loading">Loading</string>
+    <string name="very_low">Very Low</string>
+    <string name="low">Low</string>
+    <string name="normal">Normal</string>
+    <string name="high">High</string>
+    <string name="very_high">Very High</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="action_settings">Settings</string>
+    <string name="exportdb">Export DB</string>
+    <string name="importdb">Import DB</string>
+    <string name="importdb_desc">Import database file from sdcard.</string>
+    <string name="exportdb_desc">Export database file to sdcard.</string>
+    <string name="tip_edit_hint">Enter your tip here.</string>
+    <string name="confirm_text">Are you sure?</string>
+
+</resources>

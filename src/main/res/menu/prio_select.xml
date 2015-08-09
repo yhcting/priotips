@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".TipListActivity">
+    <item
+        android:id="@+id/very_low"
+        android:title="@string/very_low"
+        android:orderInCategory="100"/>
+    <item
+        android:id="@+id/low"
+        android:title="@string/low"
+        android:orderInCategory="200"/>
+    <item
+        android:id="@+id/normal"
+        android:title="@string/normal"
+        android:orderInCategory="300"/>
+    <item
+        android:id="@+id/high"
+        android:title="@string/high"
+        android:orderInCategory="400"/>
+    <item
+        android:id="@+id/very_high"
+        android:title="@string/very_high"
+        android:orderInCategory="500"/>
+
+</menu>
