@@ -1,10 +1,13 @@
 package free.yhc.priotips;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.IBinder;
@@ -17,19 +20,32 @@ import free.yhc.priotips.model.DB;
 import free.yhc.priotips.model.DBHelper;
 
 public class PrioTipsService extends Service {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(PrioTipsService.class);
 
-    private static final String ACTION_REMIND_TIP = "free.yhc.priotips.intent.action.REMIND_TIP";
-    private static final String ACTION_REVIVE = "free.yhc.priotips.intent.action.REVIVE";
+    private static final String ACTION_NOTI_DELETE= "free.yhc.priotips.action.NOTIFICATION_DELETE";
+    private static final String ACTION_REMIND_TIP = "free.yhc.priotips.action.REMIND_TIP";
+    private static final Object sLock = new Object();
     private static long[] sPrioCoeffs = new long[DBHelper.TipPriority.values().length];
+    private static boolean sServiceStarted = false;
 
     static {
         for (int i = 0; i < sPrioCoeffs.length; i++)
             sPrioCoeffs[i] = 1 << i; // 1, 2, 4, 8 ...
     }
 
-    static private BroadcastReceiver sReceiver = new BroadcastReceiver() {
+    public static class NotiIntentReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_NOTI_DELETE.equals(action))
+                PrioTipsService.stopService();
+        }
+    }
+
+    static private BroadcastReceiver sScreenOnReceiver = new BroadcastReceiver() {
         @Override
         public void
         onReceive(Context context, Intent intent) {
@@ -39,7 +55,6 @@ public class PrioTipsService extends Service {
                 run() {
                     if (PrioTipsApp.get().isAppReady()) {
                         Intent i = new Intent(Utils.getAppContext(), PrioTipsService.class);
-                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         i.setAction(ACTION_REMIND_TIP);
                         Utils.getAppContext().startService(i);
                     } else
@@ -48,22 +63,6 @@ public class PrioTipsService extends Service {
             });
         }
     };
-
-    // This receiver doens't do anything except for start servcie.
-    // And 'service' also doesn't do anything for action 'ACTION_REVIVE'.
-    // The reason why this receiver should exists, is that sometimes service is killed in force.
-    // And in this case, even if service is 'STICKY' it is NOT restarted.
-    // To win over this limitation, this service get TIME_TICK broadcast to revive itself.
-    public static class ReviveReceiver extends BroadcastReceiver {
-        @Override
-        public void
-        onReceive(Context context, Intent intent) {
-            Intent i = new Intent(Utils.getAppContext(), PrioTipsService.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            i.setAction(ACTION_REVIVE);
-            Utils.getAppContext().startService(i);
-        }
-    }
 
     private static class SelectTipTask extends AsyncTask<Integer, Integer, String> {
 
@@ -101,7 +100,7 @@ public class PrioTipsService extends Service {
 
             // select priority.
             double randprob = rand.nextDouble();
-            int prionum = 0;
+            int prionum;
             for (prionum = 0; prionum < portions.length; prionum++) {
                 if (probabiltyRange[prionum] > randprob)
                     break;
@@ -115,7 +114,9 @@ public class PrioTipsService extends Service {
         // minmax[0] = min
         // minmax[1] = max
         private boolean
-        getAtimeMinMax(long[] minmax, Random rand, Cursor c) {
+        getAtimeMinMax(long[] minmax,
+                       @SuppressWarnings("UnusedParameters") Random rand,
+                       Cursor c) {
             long min = Long.MAX_VALUE;
             long max = Long.MIN_VALUE;
             if (!c.moveToFirst())
@@ -210,13 +211,53 @@ public class PrioTipsService extends Service {
 
     public static void
     startService() {
+        if (sServiceStarted)
+            return;
         Intent i = new Intent(Utils.getAppContext(), PrioTipsService.class);
-        Utils.getAppContext().startService(i);
+        synchronized (sLock) {
+            Utils.getAppContext().startService(i);
+            sServiceStarted = true;
+        }
+    }
+
+    public static void
+    stopService() {
+        if (!sServiceStarted)
+            return;
+        Intent i = new Intent(Utils.getAppContext(), PrioTipsService.class);
+        synchronized (sLock) {
+            Utils.getAppContext().stopService(i);
+            sServiceStarted = false;
+        }
     }
 
     private void
     remindTip() {
         new SelectTipTask().execute();
+    }
+
+    private Notification
+    buildNotification() {
+        Resources res = getResources();
+        Intent intent = new Intent(this, PrioTipsService.NotiIntentReceiver.class);
+        intent.setAction(ACTION_NOTI_DELETE);
+        PendingIntent piDelete = PendingIntent.getBroadcast(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+
+        intent = new Intent(this, WelcomeActivity.class);
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        PendingIntent piContent = PendingIntent.getActivity(this, 0, intent, 0);
+        Notification.Builder nbldr = new Notification.Builder(this);
+        nbldr.setSmallIcon(R.drawable.ic_launcher)
+                .setTicker(res.getText(R.string.app_name))
+                .setContentTitle(res.getText(R.string.app_name))
+                .setContentText(res.getText(R.string.app_name))
+                .setAutoCancel(true)
+                .setContentIntent(piContent)
+                .setDeleteIntent(piDelete);
+        //noinspection deprecation
+        return nbldr.getNotification();
     }
 
     @Override
@@ -230,21 +271,27 @@ public class PrioTipsService extends Service {
     public void
     onCreate() {
         super.onCreate();
-        registerReceiver(sReceiver, new IntentFilter(Intent.ACTION_SCREEN_ON));
+        registerReceiver(sScreenOnReceiver, new IntentFilter(Intent.ACTION_SCREEN_ON));
     }
 
     @Override
     public int
     onStartCommand(Intent intent, int flags, int startId) {
         if (null == intent
-            || null == intent.getAction())
-            return START_STICKY; // nothing to do
+            || null == intent.getAction()) {
+            // just "Start service intent"
+            startForeground(R.drawable.ic_launcher, buildNotification());
+            // Framework may send this 'null' intent to restart service that is killed.
+            // This is to handle this case.
+            synchronized (sLock) {
+                sServiceStarted = true;
+            }
+            return START_STICKY;
+        }
 
         switch (intent.getAction()) {
         case ACTION_REMIND_TIP:
             remindTip();
-            break;
-        case ACTION_REVIVE:
             break;
         }
         // Unknown intent. Just ignore it.

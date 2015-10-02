@@ -5,13 +5,14 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import free.yhc.priotips.model.DBHelper;
 
 public class PrioTipsApp extends Application {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(Application.class);
 
     private static PrioTipsApp sInstance = null;
@@ -31,16 +32,14 @@ public class PrioTipsApp extends Application {
         protected void
         onPostExecute(Integer result) {
             Utils.eAssert(Utils.isUiThread());
-            Iterator<OnAppReadyListener> itr = mLAppReady.iterator();
-            while (itr.hasNext()) {
-                itr.next().onAppReadyListener();
-            }
+            for (OnAppReadyListener l : mLAppReady)
+                l.onAppReadyListener();
             mLAppReady = null;
         }
     }
 
     public interface OnAppReadyListener {
-        public void onAppReadyListener();
+        void onAppReadyListener();
     }
 
     public static PrioTipsApp
@@ -89,7 +88,6 @@ public class PrioTipsApp extends Application {
         sInstance = this;
         Context context = getApplicationContext();
         Utils.init(context);
-        PrioTipsService.startService();
         // Run DB open in background - opening DB may take long~
         prepareAppBackground();
     }

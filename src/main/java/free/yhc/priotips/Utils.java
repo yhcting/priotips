@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 
 public class Utils {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Logger P = new Logger(Utils.class);
 
     // Even if these two variables are not 'final', those should be handled like 'final'
@@ -20,7 +22,7 @@ public class Utils {
     private static Context sAppContext  = null;
     private static Handler sUiHandler   = null;
 
-    private static enum LogLV{
+    private enum LogLV{
         V ("[V]", 6),
         D ("[D]", 5),
         I ("[I]", 4),
@@ -35,10 +37,12 @@ public class Utils {
             pri = aPri;
         }
 
+        @SuppressWarnings("unused")
         String pref() {
             return pref;
         }
 
+        @SuppressWarnings("unused")
         int pri() {
             return pri;
         }
@@ -62,6 +66,7 @@ public class Utils {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class Logger {
         private final Class<?> _mCls;
         public Logger(Class<?> cls) {
@@ -147,11 +152,15 @@ public class Utils {
             copyFile(src, dst);
         } catch (Exception e) {
             try {
+                // We tried our best. Failures on delete and rename are ignored.
+                //noinspection ResultOfMethodCallIgnored
                 dst.delete();
+                //noinspection ResultOfMethodCallIgnored
                 backup.renameTo(dst);
             } catch (Exception ignored) { }
             return false;
         }
+        //noinspection ResultOfMethodCallIgnored
         backup.delete();
         return true;
     }

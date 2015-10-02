@@ -1,5 +1,6 @@
 package free.yhc.priotips;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -23,13 +24,14 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Vector;
 
 import free.yhc.priotips.model.DBHelper;
 
 public class TipListActivity extends Activity {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(TipListActivity.class);
 
     private static final String SDCARD_DIRECTORY =
@@ -118,9 +120,8 @@ public class TipListActivity extends Activity {
             Cursor cur = DBHelper.get().queryTips();
             Utils.eAssert(null != cur);
 
-            Vector<DBHelper.Tip> tips = new Vector<DBHelper.Tip>();
+            Vector<DBHelper.Tip> tips = new Vector<>();
             if (cur.moveToFirst()) {
-                int i = 0;
                 do {
                     tips.add(new DBHelper.Tip(cur));
                 } while (cur.moveToNext());
@@ -147,6 +148,7 @@ public class TipListActivity extends Activity {
             boolean ret;
             DBHelper.get().closeDb();
             File exporteddb = new File(EXPORTED_DB_PATH);
+            //noinspection ResultOfMethodCallIgnored
             exporteddb.getParentFile().mkdirs(); // don't care return
             ret = Utils.copyFileSafe(getDatabasePath(DBHelper.getDbName()), exporteddb);
             DBHelper.get().openDb();
@@ -218,7 +220,7 @@ public class TipListActivity extends Activity {
     }
 
     public interface OnTipUpdateRequest {
-        public void onTipUpdateRequest(DBHelper.TipPriority prio, String text);
+        void onTipUpdateRequest(DBHelper.TipPriority prio, String text);
     }
 
     private void
@@ -241,7 +243,7 @@ public class TipListActivity extends Activity {
 
 
     private void
-    onClickBtnAdd(View view) {
+    onClickBtnAdd(@SuppressWarnings("UnusedParameters") View view) {
         AlertDialog diag = buildUpdateTipDialog(null, new OnTipUpdateRequest() {
             @Override
             public void
@@ -308,6 +310,7 @@ public class TipListActivity extends Activity {
 
     public AlertDialog
     buildUpdateTipDialog(DBHelper.Tip tip, final OnTipUpdateRequest callback) {
+        @SuppressLint("InflateParams")
         final View diagView = getLayoutInflater().inflate(R.layout.tiplist_update_tip_dialog, null);
         Spinner spin = (Spinner)diagView.findViewById(R.id.prio_spinner);
         EditText edtext = (EditText)diagView.findViewById(R.id.tip_edit);
@@ -341,7 +344,9 @@ public class TipListActivity extends Activity {
     }
 
     public void
-    onTipChanged(DBHelper.Tip oldTip, DBHelper.Tip newTip, int fieldOpt) {
+    onTipChanged(@SuppressWarnings("UnusedParameters") DBHelper.Tip oldTip,
+                 DBHelper.Tip newTip,
+                 int fieldOpt) {
         DBHelper.get().updateTipAsync(newTip, fieldOpt, null);
     }
 
@@ -371,6 +376,13 @@ public class TipListActivity extends Activity {
         });
 
         reloadAdapter();
+    }
+
+    @Override
+    protected void
+    onStart() {
+        super.onStart();
+        PrioTipsService.startService();
     }
 
     @Override

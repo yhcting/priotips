@@ -3,17 +3,13 @@ package free.yhc.priotips;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.database.Cursor;
-import android.text.Layout;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
-import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 
 import free.yhc.priotips.model.DBHelper;
@@ -28,7 +24,9 @@ import free.yhc.priotips.model.DBHelper;
 // Then, each item occupies 32 + 200 = 232 bytes.
 // Even if we have 10,000 items, it only requires, 2,320,000 := 2M
 public class TipListAdapter extends ArrayAdapter<DBHelper.Tip> {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(TipListAdapter.class);
 
     private static final int LAYOUT = R.layout.tiplist_adapter;
@@ -134,7 +132,7 @@ public class TipListAdapter extends ArrayAdapter<DBHelper.Tip> {
     }
 
     private void
-    bindTextView(final View rowv,
+    bindTextView(@SuppressWarnings("UnusedParameters") final View rowv,
                  final TextView textv,
                  final TextView textbigv,
                  final DBHelper.Tip tip) {
